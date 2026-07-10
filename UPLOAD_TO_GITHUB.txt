@@ -1,0 +1,20 @@
+CareerAgent Collector - GitHub Upload Quick Guide
+=================================================
+
+Recommended: GitHub Desktop
+
+1. Install GitHub Desktop and sign in.
+2. File -> Add local repository.
+3. Select this extracted project folder.
+4. If prompted, create a repository here.
+5. Commit message: Initial portfolio release
+6. Click Commit to main.
+7. Click Publish repository.
+8. Repository name: career-agent-collector
+9. Uncheck Keep this code private to make it public.
+
+Before publishing, confirm that .env, .venv, data/browser, databases,
+logs, cookie snapshots, and diagnostic packages are not listed.
+
+Detailed Chinese instructions:
+docs/GITHUB_UPLOAD_GUIDE.md

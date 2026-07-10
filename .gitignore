@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Virtual environments and local settings
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+
+# Runtime data: database, browser sessions, cookies, logs, exports and diagnostics
+data/**
+!data/.gitkeep
+*.db
+*.sqlite
+*.sqlite3
+*.jsonl
+
+# Build and packaging
+build/
+dist/
+*.egg-info/
+*.zip
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.bak
+*.log
