@@ -1,6 +1,6 @@
-# CareerAgent Collector
+# Douyin Creator Link Collector
 
-> 面向 CareerAgent 的多源内容采集基础模块：输入抖音博主主页链接，快速获取作者公开资料与前 N 条公开作品，并完成类型识别、幂等入库、增量检测和全链路诊断。
+> 输入抖音博主主页链接，快速获取作者公开资料与前 N 条公开作品，并完成类型识别、幂等入库、增量检测和全链路诊断。
 
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688)
@@ -10,8 +10,6 @@
 ![CareerAgent Collector 界面](docs/images/collector-dashboard.png)
 
 ## 项目定位
-
-CareerAgent Collector 不是单纯的“链接提取脚本”，而是 CareerAgent 项目的采集基础设施。它把平台侧公开内容统一转换为稳定的数据模型，并为后续的转写、ASR 清洗、知识卡生成、RAG、学习计划和项目孵化提供可追踪的增量入口。
 
 当前版本聚焦抖音主页采集，支持：
 
