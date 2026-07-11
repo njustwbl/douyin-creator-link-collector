@@ -1,42 +1,49 @@
 # Python
 __pycache__/
 *.py[cod]
-*$py.class
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
 .coverage
 htmlcov/
-
-# Virtual environments and local settings
 .venv/
 venv/
+
+# Local configuration and secrets
 .env
 .env.*
 !.env.example
+*.key
+*.pem
 
-# Runtime data: database, browser sessions, cookies, logs, exports and diagnostics
-data/**
+# CareerAgent runtime data: never commit login state, databases or logs
+data/*
 !data/.gitkeep
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
 *.sqlite3
-*.jsonl
+**/browser/
+**/browser_profile/
+**/*session*.json
+**/*cookie*.json
+**/logs/
+**/diagnostics/
+**/exports/
+**/media/
+**/models/
 
-# Build and packaging
-build/
-dist/
-*.egg-info/
+# Generated documents and archives
 *.zip
+*.docx
+*.wav
+*.mp3
+*.mp4
 
-# IDE and OS
+# IDE / OS
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
 desktop.ini
-
-# Temporary files
-*.tmp
-*.bak
-*.log

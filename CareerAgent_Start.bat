@@ -13,7 +13,22 @@ if errorlevel 1 (
     exit /b 1
 )
 
+py -3.11 -c "import sys" >nul 2>nul
+if not errorlevel 1 (
+    py -3.11 bootstrap.py
+    goto :after_run
+)
+
+py -3.12 -c "import sys" >nul 2>nul
+if not errorlevel 1 (
+    py -3.12 bootstrap.py
+    goto :after_run
+)
+
+echo WARNING: Python 3.11/3.12 was not found. Trying the default Python 3.
 py -3 bootstrap.py
+
+:after_run
 if errorlevel 1 (
     echo.
     echo CareerAgent failed to start. Check the error message above.
