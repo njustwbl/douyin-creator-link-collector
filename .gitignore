@@ -1,45 +1,46 @@
 # Python
 __pycache__/
 *.py[cod]
+*$py.class
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
 .coverage
 htmlcov/
+
+# Virtual environments
 .venv/
 venv/
+env/
 
 # Local configuration and secrets
 .env
 .env.*
 !.env.example
-*.key
 *.pem
+*.key
 
-# CareerAgent runtime data: never commit login state, databases or logs
-data/*
+# CareerAgent runtime data
+# Keep only data/.gitkeep in the repository.
+data/**
 !data/.gitkeep
-*.db
-*.db-shm
-*.db-wal
+
+# Local storage/configuration generated outside or beside the repository
+career_agent.db
 *.sqlite
 *.sqlite3
-**/browser/
-**/browser_profile/
-**/*session*.json
-**/*cookie*.json
-**/logs/
-**/diagnostics/
-**/exports/
-**/media/
-**/models/
+*_session.json
+*api_settings*.json
+*embedding_settings*.json
+*location*.json
 
-# Generated documents and archives
-*.zip
-*.docx
-*.wav
-*.mp3
-*.mp4
+# Models, media, logs, exports, diagnostics
+models/
+media/
+logs/
+exports/
+diagnostics/
+*.log
 
 # IDE / OS
 .vscode/
@@ -47,3 +48,9 @@ data/*
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Packaging
+build/
+dist/
+*.egg-info/
+*.zip
