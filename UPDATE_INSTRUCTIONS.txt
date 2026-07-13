@@ -1,0 +1,27 @@
+CareerAgent v1.7.0 本地 Qwen / Ollama 版
+
+完整包使用：
+1. 关闭所有 CareerAgent 终端窗口。
+2. 解压完整包到新的独立目录。
+3. 原数据库与配置需要保留时，按原有数据目录设置继续指向 D:\CareerAgent。
+4. 双击根目录 CareerAgent_Start.bat。
+5. 页面右上角应显示“界面 v1.7.0 · 后端 v1.7.0”。
+
+补丁使用：
+1. 关闭 CareerAgent。
+2. 备份当前项目目录。
+3. 将补丁内文件按原目录结构覆盖到当前 v1.6.1 项目。
+4. 重新启动程序。
+
+首次使用 Ollama：
+1. 安装并启动 Ollama。
+2. 在 PowerShell 执行：
+   ollama pull qwen3.5:4b
+   ollama pull qwen3-embedding:4b
+3. 进入“文本清洗与纠错 → Ollama 本地模型设置”，分别测试对话模型和 Embedding 模型。
+
+升级说明：
+- 旧本地 1.5B 纠错模型不再被当前代码调用，但原模型文件不会自动删除。
+- 本次升级不会删除数据库、人工最终稿、评测题、原向量索引、API Key 或 ASR 模型。
+- 本地 qwen3-embedding:4b 必须建立自己的新索引，不能直接读取 BGE-M3 索引。
+- RAG 入库准备、Embedding、知识库问答和文本纠错都保留手动选择，不会自动连成整条流水线。

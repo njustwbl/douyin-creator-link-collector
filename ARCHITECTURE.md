@@ -1,201 +1,201 @@
-# CareerAgent Architecture
-
-## 1. 设计目标
-
-CareerAgent 采用“模块化单体 + 本地任务系统”的结构，优先解决单用户本地运行、复杂依赖安装、公开内容采集、批量文本化、人工确认和检索实验等问题。
-
-当前不拆微服务，原因是：
-
-- 单用户本地应用不需要承担服务发现、分布式事务和多环境部署成本；
-- ASR/OCR 模型对象需要在单进程中复用，避免重复加载；
-- SQLite 和本地文件系统足以支撑当前规模；
-- 业务模块通过稳定的数据模型和 Service 边界解耦，后续可以按需拆分。
-
-## 2. 分层结构
+# v0.5.4 架构说明
 
 ```text
-Web UI / API
-    ↓
-Router / Schema
-    ↓
-Application Service
-    ↓
-Repository / Provider / Engine
-    ↓
-SQLite / HTTP / Playwright / Local Models / External APIs
+Web UI
+  ↓ POST /transcriptions/douyin/content
+TranscriptionService（实际为单作品文本化编排器）
+  ↓
+DouyinContentResolver
+  ├─ 视频：media_urls
+  ├─ 图文：image_url_groups
+  └─ 文章：article_text
+  ↓
+Content Router
+  ├─ video   → MediaDownloader → AudioExtractor → ASR Engine Factory
+  │                                      ├─ FunASR + SenseVoiceSmall
+  │                                      ├─ FunASR + Paraformer
+  │                                      └─ faster-whisper + Whisper
+  ├─ gallery → MediaDownloader → RapidOCR
+  └─ article → Direct Article Extractor
+  ↓
+TranscriptionRepository
+  ├─ transcription_jobs
+  └─ transcripts
 ```
 
-### Web/API 层
+## 设计原则
 
-- `app/web`：本地单页工作台；
-- `app/api/v1`：API 汇总、系统与存储接口；
-- 各模块 `router.py`：输入校验、响应模型和错误映射。
+1. **作品解析与内容处理分离**：抖音字段变化只改 Resolver。
+2. **ASR 引擎统一接口**：上层不依赖 FunASR 或 faster-whisper 的具体返回格式。
+3. **按内容类型分流**：图文不误走 ASR，文章不误走 OCR。
+4. **本地模型懒加载并复用**：第一次加载慢，后续任务复用进程内模型。
+5. **资产缓存**：相同作品重复处理时复用已下载视频、音频和图片。
+6. **原始结果与可读文本并存**：为后续纠错、评估和知识库追踪保留证据。
 
-### 业务服务层
+## 后续演进
 
-- `collection.service`：采集任务编排、API/浏览器降级、批量自然日窗口；
-- `transcription.service` / `batch`：内容自动分流、批量队列、失败恢复；
-- `refinement.service`：清洗、纠错、版本与最终稿；
-- `knowledge_base.service`：知识准备、索引、检索、比较和评测。
-
-### 基础设施层
-
-- Repository：SQLAlchemy Async 数据访问；
-- Provider：抖音接口、浏览器与内容解析；
-- Engine：SenseVoice、Paraformer、Whisper、OCR、纠错模型；
-- Client：Embedding、Reranker、OpenAI-compatible API；
-- Core：日志、存储、密钥保护、运行环境、GPU DLL 路径。
-
-## 3. 数据主线
-
-```mermaid
-erDiagram
-    CREATOR ||--o{ CONTENT_ITEM : publishes
-    COLLECTION_RUN ||--o{ COLLECTION_RUN_EVENT : logs
-    TRANSCRIPTION_BATCH ||--o{ TRANSCRIPTION_JOB : contains
-    CONTENT_ITEM ||--o{ TRANSCRIPTION_JOB : processed_by
-    TRANSCRIPTION_JOB ||--|| TRANSCRIPT : produces
-    TRANSCRIPTION_JOB ||--o{ QUALITY_ASSESSMENT : evaluated_by
-    TRANSCRIPTION_JOB ||--o{ REFINEMENT_JOB : refined_by
-    REFINEMENT_JOB ||--o| FINAL_TEXT : confirms
-    FINAL_TEXT ||--o{ KNOWLEDGE_PREPARATION : prepares
-    INDEX_PROFILE ||--o{ INDEX_CHUNK : indexes
-    RETRIEVAL_EVALUATION_CASE ||--o{ RETRIEVAL_EVALUATION_RUN : tested_in
-```
-
-核心原则：
-
-- 原始数据不覆盖；
-- 每个处理阶段保留来源、版本和 Trace ID；
-- 同一作品通过平台 ID 幂等更新；
-- 点赞等互动变化与正文语义变化分离；
-- 下游只处理新增或语义版本变更的数据。
-
-## 4. 采集模块
+下一步应把同步 HTTP 调用升级为后台任务：
 
 ```text
-DouyinHybridProvider
-├── FastApiProvider
-│   ├── Cookie 快照
-│   ├── 签名参数
-│   ├── 分页与指数退避
-│   └── 视频/图文/文章归一化
-└── BrowserProvider
-    ├── 可见登录窗口
-    ├── 主页网络响应监听
-    ├── DOM 兜底
-    └── 人工验证码处理
+创建任务 → Worker 领取 → 下载/OCR/ASR → 页面轮询进度 → 完成后通知
 ```
 
-浏览器兜底只用于目标主页，不逐条打开作品详情页，以控制速度和错误跳转。
+届时可直接复用现有 Resolver、Downloader、Engine Factory 和 Repository。
 
-## 5. 文本化流水线
 
-```mermaid
-flowchart LR
-    A[作品链接] --> B[解析作品类型]
-    B -->|视频| C[下载视频]
-    C --> D[提取音频]
-    D --> E[ASR 队列]
-    B -->|图文| F[图片下载]
-    F --> G[OCR]
-    B -->|文章| H[结构化数据 / JSON / DOM]
-    E --> I[统一分段与格式化]
-    G --> I
-    H --> I
-    I --> J[(Transcript)]
-    J --> K[质量评估]
-```
+## 文章正文解析
 
-批量任务采用：
+文章处理不会只依赖静态 HTML。解析顺序为详情 API、旧版信息接口、页面 hydration JSON、隐藏浏览器渲染兜底。浏览器兜底复用登录 Cookie，但使用独立临时上下文，避免锁定本地持久化登录目录。
 
-- 受控并发解析与下载；
-- 同一 ASR 模型单例复用；
-- GPU 推理锁；
-- 子任务独立失败与重试；
-- 程序重启后恢复排队任务。
 
-## 6. 文本治理
+## 文章正文候选选择
 
-文本版本链路：
+文章解析不会因为网络响应出现标题就立即成功。解析器会并行收集：
+
+- 标准作品数据中的正文；
+- 非标准 JSON 正文候选；
+- 渲染页面的正文 DOM。
+
+标题、近似标题和极短摘要会被排除，最后按文本长度、段落、标点与来源权重选择最佳正文。
+
+
+## v0.5.4 运行环境管理层
 
 ```text
-raw_text
-→ cleaned_text
-→ terminology_text
-→ model_or_api_refined_text
-→ human_final_text
+CareerAgent_Start.bat
+  → bootstrap.py
+      → NVIDIA 驱动检测
+      → PyTorch CPU/CUDA 选择与自检
+      → ASR/OCR 依赖安装
+      → 计算环境报告
+  → app/core/compute.py
+      → Windows DLL 搜索路径注册
+      → PyTorch/CTranslate2 在线诊断
+  → GET /api/v1/system/compute-status
+      → 前端计算设备面板
 ```
 
-每次修改记录：
+PyTorch 不再由通用 requirements 文件管理，避免 GPU wheel 被普通 PyPI CPU wheel 覆盖。Whisper 仍使用 CTranslate2，但在进程启动时优先复用 PyTorch wheel 自带的 CUDA 12 和 cuDNN DLL。
 
-- 处理模式；
-- 模型或 API；
-- 修改项与风险项；
-- 数字、URL、版本号安全校验；
-- 耗时、设备、错误和 Trace ID。
-
-## 7. 知识库检索
-
-### 索引
-
-- 文档切分在正式入库时统一完成；
-- 每个 Index Profile 绑定 Embedding 模型和参数；
-- 支持并存多个索引，用于横向比较；
-- 文档删除或最终稿变化时标记索引 stale。
-
-### 检索策略
-
-- `dense`：纯向量相似度；
-- `hybrid`：Dense 与 BM25 查询内归一化后线性融合；
-- `rrf`：Dense 与 BM25 排名的 Reciprocal Rank Fusion；
-- 多来源问题可启用 MMR 多样化；
-- Reranker 支持关闭、仅低置信单选、仅单选或全部问题。
-
-### 评测
-
-- 单选问题：关注首个正确文档排名和 Hit@K；
-- 多选问题：关注 Recall@K、Precision@K 和 Full Hit；
-- 记录检索策略、权重、RRF 常数、MMR、Reranker 作用范围、耗时和 API 请求。
-
-## 8. 可观测性
-
-每个主要任务包含：
-
-- `run_id` / `job_id`；
-- `trace_id`；
-- 状态与阶段；
-- 结构化错误码；
-- 开始/结束时间和耗时；
-- 模型、设备、请求次数与流量；
-- JSONL 程序日志和可导出诊断 ZIP。
-
-日志层会对 Cookie、Token、签名参数和 API Key 脱敏。
-
-## 9. 存储边界
-
-代码仓库与运行数据分离：
+## v0.6.1 批量文本化流水线
 
 ```text
-Repository                    App Data Directory
-├── app/                      ├── database/
-├── tests/                    ├── browser/
-├── docs/                     ├── logs/
-└── launch scripts            ├── media/
-                              ├── models/
-                              └── settings/
+transcription_batches
+        ↓ 创建多个 queued 子任务
+transcription_jobs
+        ↓ 后台 BatchManager 调度
+受控并发解析 / 下载 / FFmpeg
+        ↓
+ASR 引擎内部队列（模型常驻，仅加载一次）
+OCR 引擎内部队列（模型常驻）
+文章正文解析（可并行）
+        ↓
+transcripts
 ```
 
-用户可以分别选择运行数据目录和导出目录。媒体默认作为临时缓存；数据库、文本、质量评估和最终稿长期保存。
+批量并发不是简单地同时运行多份 GPU 模型。网络和预处理阶段并发，ASR 推理通过各引擎的进程级锁串行执行，从而兼顾吞吐量和显存稳定性。
 
-## 10. 后续拆分方向
+后台任务状态保存在 SQLite。程序重启时会把未完成的 `running` 子任务恢复为 `queued` 并继续执行。
 
-达到以下条件后再考虑服务化：
+## v0.6.3 位置配置与导出边界
 
-- 多用户并发或远程部署；
-- 需要独立伸缩 GPU Worker；
-- 数据量超出 SQLite 合理范围；
-- 需要基于消息队列的可靠任务调度；
-- 需要租户权限、配额和审计。
+首次启动由标准库脚本 `careeragent_location.py` 在创建虚拟环境之前完成路径选择。小型位置指针保存在系统配置目录，实际大文件可位于任意磁盘。
 
-可演进为：PostgreSQL + Redis/任务队列 + 独立采集 Worker + GPU Worker + 对象存储 + OpenTelemetry/Langfuse。
+```text
+location.json
+├── app_home     运行环境、模型、数据库、登录数据、缓存
+└── export_dir   用户主动导出的 Word / TXT
+```
+
+应用进程启动后固定使用本次启动解析出的 `app_home`，避免运行中切换数据库路径。导出目录允许在页面中即时修改；运行数据目录的修改仅写入下一次启动配置。
+
+
+## v0.6.3 界面导航与诊断边界
+
+前端采用单页多板块视图，顶部导航只切换可见板块，不重新加载后端任务。采集、批量采集和文本化结果生成后对应视图才启用。
+
+诊断分为三层：数据库任务状态与阶段事件、JSONL 程序运行日志、启动安装日志。诊断包可汇总最近采集任务、批量任务、文本化任务及轮转日志，但不包含 Cookie、Token 和浏览器登录目录。
+
+## v0.7.0 文本质量门禁
+
+新增：
+
+```text
+app/modules/transcription/
+├── quality.py           # 无参考质量评分、模型相似度、CER 算法
+└── quality_service.py   # 评估持久化、重评估、人工标准稿评测
+```
+
+数据表：
+
+```text
+transcription_quality_assessments
+├── score / level / review_required
+├── metrics_json / issues_json
+├── verifier_engine / verifier_text / verifier_similarity
+└── reference_text / cer / substitutions / insertions / deletions
+```
+
+处理链路：
+
+```text
+ASR / OCR / 文章正文
+→ 自动质量门禁
+→ 可选第二 ASR 模型交叉复核
+→ 风险分级
+→ 人工标准稿 CER
+→ 后续纠错与知识库
+```
+
+自动质量分只作为风险排序，不应被解释为真实准确率。真实准确率必须由人工标准稿和 CER 评测得到。
+
+
+## v0.8.0 文本清洗与纠错模块
+
+```text
+app/modules/refinement/
+├── normalizer.py   # 确定性清洗和领域术语规范化
+├── engine.py       # 按需加载本地 1.5B 中文纠错模型
+├── validator.py    # 数字、URL、长度、修改比例安全校验
+├── models.py       # 当前状态、任务历史和文本版本
+├── repository.py
+├── service.py
+├── schemas.py
+└── router.py
+```
+
+该模块只读取文本化结果，不修改 `transcripts` 原始记录。所有衍生版本保存在独立表中，导出器按 `final > corrected > normalized > raw` 选择文本。后续知识库模块也应复用这一版本选择策略。
+
+## v0.9.0 ASR 结果规范化与 API 纠错
+
+三种 ASR 引擎不再各自维护展示规则，而是统一输出 `ASRSegment(start, end, text)`：
+
+```text
+SenseVoice / Paraformer / Whisper
+        ↓
+控制标签与声音事件元数据分离
+        ↓
+统一时间片结构
+        ↓
+停顿 + 标点 + 目标句长重建句子
+        ↓
+目标段落长度排版
+        ↓
+可读文本 + 原始可追溯文本
+```
+
+文本纠错层提供四个显式策略：`basic`、`terminology`、`local`、`api`。其中 API 策略
+通过 OpenAI-compatible `/chat/completions` 调用用户指定模型。提供商配置存储在应用数据
+目录；Windows API Key 使用当前用户 DPAPI 加密，接口响应和诊断包永不返回明文 Key。
+
+## v1.6.0 RAG 评测与优化闭环
+
+新增 `rag_evaluation_cases` 与 `rag_evaluation_runs` 两类持久化数据：
+
+- 评测题保存问题、正确父文档、参考答案、关键要点、拒答预期及 tune/test 划分；
+- 评测运行保存检索结果、发送给回答模型的上下文、回答、引用、耗时、请求量、Token 和失败诊断；
+- `rag_runtime.json` 保存正式知识库问答默认配置；
+- 参数实验复用现有检索评测链路，不调用回答模型；
+- 端到端问答评测默认使用规则代理指标，不额外调用裁判 LLM。
+
+该设计保持模块化单体边界，不引入新的队列、向量数据库或微服务。

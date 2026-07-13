@@ -1,0 +1,14 @@
+CareerAgent v1.6.0 更新方法
+
+1. 关闭所有 CareerAgent 终端窗口。
+2. 解压补丁。
+3. 将补丁中的 app 文件夹复制到当前项目根目录并选择覆盖。
+4. 重新运行当前项目目录中的 CareerAgent_Start.bat。
+5. 页面右上角应显示“界面 v1.6.0 · 后端 v1.6.0”。
+
+本次更新：
+- 不新增第三方依赖；
+- 不需要重建已有 Embedding 索引；
+- 不删除 52 道检索评测题；
+- 首次启动会自动创建 rag_evaluation_cases 与 rag_evaluation_runs 两张 SQLite 表；
+- 可在“评测与优化”页面将原检索评测题一键导入。

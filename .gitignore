@@ -1,56 +1,15 @@
-# Python
 __pycache__/
-*.py[cod]
-*$py.class
 .pytest_cache/
-.ruff_cache/
-.mypy_cache/
-.coverage
-htmlcov/
-
-# Virtual environments
 .venv/
-venv/
-env/
-
-# Local configuration and secrets
 .env
-.env.*
-!.env.example
-*.pem
-*.key
-
-# CareerAgent runtime data
-# Keep only data/.gitkeep in the repository.
-data/**
-!data/.gitkeep
-
-# Local storage/configuration generated outside or beside the repository
-career_agent.db
-*.sqlite
-*.sqlite3
-*_session.json
-*api_settings*.json
-*embedding_settings*.json
-*location*.json
-
-# Models, media, logs, exports, diagnostics
-models/
-media/
-logs/
-exports/
-diagnostics/
+data/*.db
+data/browser/
+*.pyc
+data/logs/
+data/media/
+data/models/
+data/diagnostics/
+.ruff_cache/
 *.log
-
-# IDE / OS
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# Packaging
-build/
-dist/
-*.egg-info/
 *.zip
+render_test.html
