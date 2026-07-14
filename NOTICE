@@ -1,6 +1,18 @@
 CareerAgent
 Copyright 2026 CareerAgent contributors
 
-This product contains code adapted from Apache-2.0 licensed implementations
-associated with the F2 / Douyin_TikTok_Download_API ecosystem. See
-THIRD_PARTY_NOTICES.md and retained source-file headers for details.
+This product includes software developed by CareerAgent contributors.
+
+The signing helpers in:
+
+- app/modules/collection/providers/douyin/abogus.py
+- app/modules/collection/providers/douyin/xbogus.py
+
+contain or adapt Apache-2.0 licensed implementations associated with the F2
+and Douyin_TikTok_Download_API ecosystems. Original source attribution and
+license notices are retained in the relevant source files and documented in
+THIRD_PARTY_NOTICES.md.
+
+Model weights, Ollama, ASR engines, OCR engines, browser binaries, FFmpeg,
+PyTorch, and remote APIs are not relicensed by the CareerAgent license. They
+remain subject to their respective upstream licenses and terms.

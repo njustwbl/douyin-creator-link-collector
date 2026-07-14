@@ -1,15 +1,82 @@
+# Python
 __pycache__/
+*.py[cod]
+*$py.class
 .pytest_cache/
-.venv/
-.env
-data/*.db
-data/browser/
-*.pyc
-data/logs/
-data/media/
-data/models/
-data/diagnostics/
 .ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Virtual environments and local config
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local CareerAgent runtime data
+data/*
+!data/.gitkeep
+career_agent.db
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Browser sessions and secrets
+**/browser/
+**/browser_profile/
+**/douyin_session.json
+**/*api_settings*.json
+**/*secret*.json
+**/*credentials*.json
+
+# Logs and diagnostics
 *.log
+*.jsonl
+**/logs/
+**/diagnostics/
+**/*diagnostic*.zip
+
+# Models, runtimes and caches
+**/models/
+**/model_cache/
+**/downloads/
+**/runtime/
+**/torch/
+**/ollama/
+
+# Media and generated exports
+**/cache/media/
+*.mp4
+*.mov
+*.mkv
+*.webm
+*.wav
+*.mp3
+*.m4a
+*.flac
+*.onnx
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.gguf
+*.docx
+*.xlsx
+*.csv
 *.zip
+
+# Temporary/rendered files
 render_test.html
+*.tmp
+*.part

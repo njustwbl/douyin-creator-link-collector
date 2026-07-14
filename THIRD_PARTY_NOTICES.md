@@ -1,53 +1,51 @@
 # Third-party notices
 
-The isolated signing helpers under:
+CareerAgent combines original application code with optional open-source runtimes, models, and API providers. The repository does not redistribute model weights, Ollama binaries, Chromium, FFmpeg, PyTorch, or remote-model access.
+
+## Douyin signing helpers
+
+The isolated helpers under:
 
 - `app/modules/collection/providers/douyin/abogus.py`
 - `app/modules/collection/providers/douyin/xbogus.py`
 
-are adapted from Apache License 2.0 implementations associated with the F2 / Douyin_TikTok_Download_API ecosystem and the user-provided `douyin-downloader` reference project. Their original license headers and attribution are retained where applicable.
+contain or adapt Apache License 2.0 implementations associated with the F2 and Douyin_TikTok_Download_API ecosystems. Original attribution is retained in source headers where applicable.
 
-The remaining CareerAgent Collector application code is independently organized around its own Provider, Service, Repository, API and Web UI layers.
+## Application dependencies
 
-## Local transcription dependencies
+Major dependencies include:
 
-The optional local transcription feature uses:
+- FastAPI, Starlette, Uvicorn;
+- SQLAlchemy and aiosqlite;
+- HTTPX and Playwright;
+- Beautiful Soup;
+- python-docx;
+- RapidFuzz;
+- Transformers and sentence-transformers.
 
-- FunASR, distributed under its upstream open-source license;
-- SenseVoiceSmall model weights from `iic/SenseVoiceSmall` / FunAudioLLM;
+Each dependency remains governed by its upstream license.
+
+## ASR and OCR
+
+Optional local processing uses:
+
+- FunASR;
+- SenseVoiceSmall model weights;
+- Paraformer, FSMN-VAD, and CT-Punc model weights;
+- faster-whisper and CTranslate2;
 - PyTorch and torchaudio;
-- imageio-ffmpeg and the FFmpeg binary it provides.
+- RapidOCR and ONNX Runtime;
+- imageio-ffmpeg and FFmpeg;
+- SoundFile.
 
-SenseVoiceSmall model weights are published under a model-specific license. Before redistributing the model files or using them in a commercial product, review the current upstream model license. CareerAgent does not bundle the model weights; they are downloaded to the user's local `data/models` directory on first use.
+Model weights are downloaded locally on demand and remain subject to their model-card licenses. Review the latest upstream terms before redistribution or commercial use.
 
+## Ollama and Qwen models
 
-## v0.5.0 新增组件
+CareerAgent can install or connect to Ollama and can download locally selected chat and embedding models, including the configured Qwen models. Ollama and all model weights remain under their respective upstream licenses and terms. CareerAgent does not bundle or relicense them.
 
-- faster-whisper：MIT License，用于运行 Whisper 模型。
-- CTranslate2：MIT License，faster-whisper 的底层推理引擎。
-- RapidOCR：Apache-2.0 License，用于本地图文 OCR。
-- ONNX Runtime：MIT License，用于 RapidOCR CPU 推理。
-- Beautiful Soup：MIT License，用于文章 HTML 文本清理。
+## OpenAI-compatible APIs
 
-模型权重各自受其模型许可证约束。项目不会把模型权重打包进发布 ZIP，首次使用时由用户本机下载。
+CareerAgent may call user-configured OpenAI-compatible chat and embedding endpoints. The project does not provide, resell, or grant access to a remote model. Users are responsible for provider accounts, API keys, prices, data policies, model licenses, and terms of service.
 
-## v0.6.1 新增组件
-
-- python-docx：MIT License，用于用户点击导出时在内存中生成 DOCX。
-
-DOCX 不会在服务器目录自动保留副本；仅通过浏览器响应按需下载。
-
-
-## v0.8.0 新增组件
-
-- Transformers：Apache-2.0 License，用于按需加载本地中文纠错模型；
-- `shibing624/chinese-text-correction-1.5b`：模型权重按其上游模型卡许可证使用，用于保守中文拼写和语法纠错。
-
-纠错模型不会打包进 CareerAgent ZIP。用户第一次运行“保守通顺”时，程序会显示模型名称、预计体积和保存目录，确认后才下载。发布或商用前应再次核对上游模型卡中的最新许可证。
-
-## OpenAI-compatible LLM APIs
-
-v0.9.0 can call user-configured OpenAI-compatible Chat Completions endpoints. CareerAgent does not bundle,
-resell, or grant access to any remote model. Users are responsible for the selected provider's account,
-API key, pricing, data policy, model license, and terms of service. API keys are excluded from logs and
-diagnostic packages; on Windows, remembered keys are protected with the current user's DPAPI.
+API keys are excluded from logs and diagnostic packages. On Windows, remembered keys are protected using the current user's DPAPI context.

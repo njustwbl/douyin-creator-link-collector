@@ -441,7 +441,7 @@ def write_compute_report(python: Path) -> None:
 
 
 def launch(python: Path) -> None:
-    print("[7/7] Starting CareerAgent Collector...")
+    print("[7/7] Starting CareerAgent...")
     print("The management page will open automatically in your browser.")
     run([str(python), "-m", "app.launcher"])
 

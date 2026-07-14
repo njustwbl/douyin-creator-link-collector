@@ -1,69 +1,69 @@
 # CareerAgent
 
-CareerAgent is a local-first content ingestion, transcription, refinement, and retrieval-evaluation platform designed for AI career learning workflows.
+CareerAgent is a local-first AI content ingestion, transcription, refinement, retrieval, and RAG evaluation platform built for AI learning and career preparation.
 
-It turns public short-form content into traceable knowledge assets through the following pipeline:
+**Current release: v1.7.2**
+
+## Pipeline
 
 ```text
-Collection
-→ Video ASR / Gallery OCR / Article Extraction
-→ Quality Gate and Human Reference Text
-→ Cleaning and Terminology Refinement
-→ Knowledge Preparation
-→ Embedding Indexes
-→ Dense / Hybrid / RRF Retrieval
-→ Optional Reranking
-→ Single-label and Multi-label Retrieval Evaluation
+Douyin collection
+→ Video ASR / Gallery OCR / Article extraction
+→ Quality gate
+→ Text normalization and terminology correction
+→ Human-approved final text
+→ Knowledge preparation
+→ Embedding and hybrid retrieval
+→ Citation-grounded RAG answers
+→ Evaluation, diagnosis, and parameter optimization
 ```
 
 ## Highlights
 
-- FastAPI + async SQLAlchemy + SQLite;
-- API-first Douyin creator collection with browser fallback;
-- SenseVoice, Paraformer, Whisper, RapidOCR, and article extraction;
-- batch processing, task recovery, structured errors, trace IDs, and diagnostics;
-- automatic text quality scoring, cross-ASR comparison, and Chinese CER;
-- deterministic cleaning, domain terminology correction, local model refinement, and OpenAI-compatible API refinement;
-- embedding model profiles, Dense/BM25 hybrid search, Reciprocal Rank Fusion, MMR diversification, and optional reranking;
-- retrieval test sets with Hit@K, Recall@K, Precision@K, and full-hit metrics;
-- local storage controls and Windows DPAPI-protected API keys.
+- API-first Douyin collection with browser fallback and idempotent persistence;
+- SenseVoice, Paraformer, and faster-whisper transcription;
+- RapidOCR for gallery posts and rendered-page fallback for long articles;
+- quality scores, cross-model checks, CER, and human review;
+- deterministic cleanup, domain glossary, OpenAI-compatible APIs, and local Qwen via Ollama;
+- Dense, BM25, weighted hybrid, RRF, MMR, and optional reranking;
+- citation-grounded knowledge-base answers with safe fallback;
+- end-to-end RAG evaluation, failure classification, and parameter experiments;
+- structured trace IDs, diagnostic events, rotating logs, and redacted support bundles;
+- configurable runtime, model, cache, database, and export locations.
 
-## Quick Start
+## Quick start on Windows
 
-Recommended environment: Windows 10/11 and Python 3.11 or 3.12.
+1. Install Python 3.11 or 3.12.
+2. Extract the repository.
+3. Run `CareerAgent_Start.bat`.
+4. Select local storage locations during the first-run wizard.
+5. Complete Douyin login in the browser before collecting content.
 
-For normal users, double-click:
+Optional ASR and Ollama model files are downloaded locally and are not included in this repository.
 
-```text
-CareerAgent_Start.bat
-```
-
-For development:
+## Development
 
 ```bash
 python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements-dev.txt
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
 playwright install chromium
 uvicorn app.main:app --reload
 ```
 
-Optional local ASR/OCR dependencies:
+Tests:
 
 ```bash
-pip install -r requirements-asr.txt
+pip install -r requirements-ci.txt
+pytest -q
 ```
 
-## Security and Local Data
+The prepared release passed 84 offline tests.
 
-The repository excludes cookies, browser profiles, databases, logs, media, model weights, exported documents, `.env`, and API keys. See [SECURITY.md](SECURITY.md).
+## Privacy
 
-## Current Scope
-
-CareerAgent is currently a Windows-first, local, single-user application. It is not a hosted SaaS platform. Douyin interfaces may change, and users must comply with applicable terms, copyright, privacy, and local laws.
-
-For the full Chinese documentation, see [README.md](README.md).
+The repository excludes API keys, cookies, browser profiles, databases, logs, media caches, model weights, and user exports. See [SECURITY.md](SECURITY.md).
 
 ## License
 
-Apache-2.0 for the main project. Third-party notices and model-license considerations are documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Apache License 2.0 for the original CareerAgent code. Third-party components remain under their respective licenses. See [NOTICE](NOTICE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

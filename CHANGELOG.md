@@ -1,58 +1,54 @@
 # Changelog
 
-本文件记录主要能力里程碑。早期详细开发记录见 `docs/legacy/RELEASE_NOTES_PRE_V1.md`。
+All notable public releases of CareerAgent are documented here.
 
-## [1.4.2] - 2026-07
+## [1.7.2] - 2026-07
 
 ### Changed
 
-- 优化单选、多选问题的检索策略；
-- 支持 Dense、Hybrid、RRF；
-- 多来源问题自动扩展 Top-K；
-- 支持 MMR 多样化；
-- 调整 Reranker 作用范围，减少不必要请求；
-- 保留现有普通版和 Pro 版索引，无需重建。
+- replaced silent Ollama installer execution with the official Windows portable archive;
+- added resumable download and retry handling;
+- added release metadata, SHA-256 verification when available, and ZIP CRC/layout validation;
+- standardized Ollama installation under the selected `app` directory and models under `models`;
+- kept local chat and embedding model downloads/tests sequential to reduce VRAM contention;
+- preserved complete separation from SenseVoice, Paraformer, faster-whisper, and PyTorch/CUDA.
 
-## [1.4.0] - 2026-07
+## [1.7.1] - 2026-07
 
-- 增加单选/多选检索评测；
-- 增加 Recall@K、Precision@K 和 Full Hit 指标；
-- 混合检索结果展示 Dense、BM25、融合与 Rerank 分数。
+### Added
 
-## [1.3.x] - 2026-07
+- one-click Windows deployment for Ollama and Qwen local models;
+- install-root selection, progress reporting, service startup, model download, and live tests;
+- disk-space checks and isolated Ollama model storage.
 
-- 批量确认知识文档；
-- 低成本元数据抽取；
-- 检索测试集和模型横向比较；
-- 支持从人工最终稿导出评测材料；
-- 增加批量范围选择和多文档正确答案。
+## [1.7.0] - 2026-07
 
-## [1.2.x] - 2026-07
+### Added
 
-- Embedding API 设置；
-- 多模型索引；
-- 索引构建、删除和 stale 状态；
-- 检索实验台和多索引比较；
-- 知识文档范围筛选与删除。
+- local Qwen3.5-4B refinement through Ollama;
+- local Qwen embedding provider;
+- local or API model selection for knowledge preparation and RAG answers;
+- unified Ollama settings and health tests.
 
-## [1.1.x] - 2026-07
+### Removed
 
-- 增加知识入库准备；
-- 将人工最终稿转成标准知识文档；
-- 正式索引阶段统一切分，避免重复生成片段。
+- the old local 1.5B correction runtime path.
 
-## [1.0.x] - 2026-07
+## [1.6.0] - 2026-07
 
-- OpenAI-compatible LLM API 设置；
-- 支持 OpenAI、DeepSeek、SiliconFlow、Ollama 和自定义兼容接口；
-- Windows DPAPI 可选加密保存 API Key；
-- API 可读化整理与本地处理模式并存。
+### Added
 
-## [0.9.x and earlier]
+- end-to-end RAG evaluation sets;
+- failure diagnosis across retrieval, ranking, context, answer, citation, and refusal stages;
+- retrieval parameter experiments;
+- publishing the selected configuration as the production default.
 
-- 多 ASR 输出统一后处理；
-- 文本清洗、术语纠错和人工最终稿；
-- 质量评分、双模型复核和 CER；
-- 视频/图文/文章自动文本化；
-- 多博主自然日采集；
-- 诊断中心、存储目录与 CPU/GPU 自动环境管理。
+## [1.5.0] - 2026-07
+
+### Added
+
+- citation-grounded knowledge-base question answering;
+- RRF, weighted hybrid, Dense, MMR, and adaptive reranking;
+- evidence-insufficient and invalid-citation safe fallback.
+
+Detailed release notes are available under [`docs/releases`](docs/releases/).
