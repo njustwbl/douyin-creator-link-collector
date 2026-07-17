@@ -32,11 +32,12 @@ career_agent.db
 *.sqlite
 *.sqlite3
 
-# Browser sessions and secrets
+# Browser sessions, API settings and secrets
 **/browser/
 **/browser_profile/
 **/douyin_session.json
 **/*api_settings*.json
+**/*ollama_settings*.json
 **/*secret*.json
 **/*credentials*.json
 
@@ -54,6 +55,7 @@ career_agent.db
 **/runtime/
 **/torch/
 **/ollama/
+**/huggingface/
 
 # Media and generated exports
 **/cache/media/

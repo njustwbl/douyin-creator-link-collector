@@ -1,10 +1,10 @@
 # CareerAgent
 
-> 面向 AI 学习与求职场景的本地优先内容处理平台：将抖音视频、图文和长文章转换为可清洗、可检索、可引用、可评测的知识资产。
+> 面向 AI 学习与求职场景的本地优先内容处理与 RAG 评测平台：把抖音视频、图文和长文章转换为可清洗、可检索、可引用、可评测的知识资产。
 
-**当前版本：v1.7.2**
+**当前版本：v1.9.3**
 
-CareerAgent 已实现从公开内容采集到 RAG 评测的完整工程链路，覆盖：
+CareerAgent 已实现从公开内容采集到本地 RAG 回归评测的完整工程链路：
 
 ```text
 内容采集
@@ -12,23 +12,25 @@ CareerAgent 已实现从公开内容采集到 RAG 评测的完整工程链路，
 → 文本质量评估
 → 清洗、术语纠错与人工最终稿
 → 知识入库准备
-→ Embedding 与混合检索
+→ 父子分块与 Embedding
+→ Dense / BM25 / Hybrid / RRF
+→ 可选 Qwen3 Reranker
 → 带引用知识库问答
-→ RAG 评测、失败诊断与参数优化
+→ 端到端 RAG 评测、回归对比与参数优化
 ```
 
-该仓库适合作为 AI 应用开发、RAG 工程、Agent 工程与 AI 产品方向的作品集项目，也可作为个人 AI 学习资料处理工具使用。
+该项目适合作为 AI 应用开发、RAG 工程、Agent 工程和 AI 产品方向的作品集，也可作为个人 AI 学习资料处理工具。
 
 ## 核心能力
 
 ### 1. 多源内容采集
 
 - 输入单个抖音博主主页，采集前 N 条公开作品；
-- 多博主按完整自然日增量采集；
+- 多博主按完整自然日做增量采集；
 - 区分视频、普通图文和长文章；
 - API-first + 浏览器主页兜底；
 - `platform + aweme_id` 幂等去重；
-- 采集任务、错误码、阶段事件与 Trace ID 全链路记录。
+- 采集任务、错误码、阶段事件和 Trace ID 全链路记录。
 
 ### 2. 自动文本化
 
@@ -38,23 +40,16 @@ CareerAgent 已实现从公开内容采集到 RAG 评测的完整工程链路，
 | 图文 | 图片下载 → RapidOCR 本地 OCR → 文本合并 |
 | 长文章 | 结构化接口 → 页面内嵌数据 → 隐藏浏览器 DOM 兜底 |
 
-视频 ASR 支持：
-
-- SenseVoiceSmall；
-- Paraformer + VAD + 标点模型；
-- faster-whisper；
-- NVIDIA CUDA 自动检测；
-- CUDA 运行失败时自动回退 CPU/int8；
-- 批量任务、失败项单独重试和模型进程内复用。
+视频 ASR 支持 SenseVoiceSmall、Paraformer 和 faster-whisper，并提供 CUDA 自动检测、CPU 回退、批量任务、失败项重试与模型进程内复用。
 
 ### 3. 文本质量门禁
 
 - 自动质量评分和风险分层；
 - 重复片段、异常字符、超长无标点句检测；
-- ASR 双模型交叉复核；
+- 双 ASR 模型交叉复核；
 - 人工标准稿与 CER 计算；
 - 原始文本、清洗稿、纠错稿和人工最终稿分别保存；
-- 未经确认的高风险文本可阻止进入知识库。
+- 高风险文本可阻止进入知识库。
 
 ### 4. 文本清洗与纠错
 
@@ -66,32 +61,35 @@ CareerAgent 已实现从公开内容采集到 RAG 评测的完整工程链路，
 - 数字、版本号、URL 和修改比例安全校验；
 - 人工编辑并确认最终稿。
 
-### 5. 知识库与检索
+### 5. 本地优先知识库
 
-- 文档级知识入库准备；
+- 父子分块：短子块负责精准召回，较长父块负责回答上下文；
+- Embedding 文本加入标题、作者、小节、主题和关键词等身份信息；
 - API Embedding 与 Ollama 本地 Embedding；
-- Dense、BM25、加权混合和 RRF；
-- MMR 多来源去重；
-- 可选本地 Reranker；
-- 不同 Embedding 模型建立独立索引；
-- 单题检索、方案对比和批量召回评测。
+- `qwen3-embedding:0.6b` 与 `qwen3-embedding:4b` 可分别建立索引；
+- Dense、BM25、加权混合、RRF 和 MMR；
+- Qwen3-Reranker-0.6B / 4B 本地精排；
+- 查询向量、BM25、基础排名、上下文和答案缓存，索引变化时自动失效。
 
-### 6. 带引用知识库问答
+### 6. 带引用的知识库问答
 
-- 先检索证据，再生成答案；
-- API 大模型或本地 `qwen3.5:4b` 手动选择；
+- 规则查询路由识别精确事实、概念题、多来源题和追问；
+- 动态证据压缩、父块回溯、重叠去重、同文档限流和字符预算；
+- 低置信度证据门禁，资料不足时拒答；
+- API 大模型或本地 Ollama 模型手动选择；
+- 本地 Ollama 支持 NDJSON 流式输出；
 - `[1]`、`[2]` 编号引用绑定真实来源；
-- 资料不足或引用无效时安全回退；
-- 保存检索结果、上下文、回答、引用、耗时与 Token。
+- 保存检索结果、上下文、回答、引用、耗时和 Token。
 
 ### 7. RAG 评测与优化
 
-- 将检索题导入端到端问答评测集；
 - 参考答案、关键要点、拒答预期和调参集/测试集划分；
 - 自动诊断召回、排序、上下文选择、生成、引用和拒答问题；
-- 参数实验批量对比；
-- 选择质量最高、成本最低和综合最优方案；
-- 一键发布为正式问答默认配置。
+- 端到端评测支持历史运行作为回归基线；
+- 展示通过率、正确性、忠实度、引用、耗时、Token 和退化题；
+- 检索方案实验与端到端问答评测明确分离；
+- 统一检索默认配置覆盖单题、批量评测、问答和方案对比；
+- 精排比例与题数安全上限，避免本地 Reranker 近乎全量运行。
 
 ### 8. 本地模型与存储管理
 
@@ -116,19 +114,21 @@ flowchart LR
     G --> H[Refinement]
     H --> I[人工最终稿]
     I --> J[Knowledge Preparation]
-    J --> K[Chunk + Embedding]
-    K --> L[Dense / BM25 / Hybrid / RRF]
-    L --> M[Optional Reranker]
-    M --> N[带引用 RAG Answer]
-    N --> O[RAG Evaluation]
-    O --> P[Parameter Optimization]
+    J --> K[Parent-Child Chunking]
+    K --> L[Embedding + Index]
+    L --> M[Dense / BM25 / Hybrid / RRF]
+    M --> N[Optional Qwen3 Reranker]
+    N --> O[Evidence Compression]
+    O --> P[Cited RAG Answer]
+    P --> Q[RAG Evaluation]
+    Q --> R[Regression & Optimization]
 ```
 
-应用采用**模块化单体**结构：
+应用采用模块化单体结构：
 
 ```text
 app/
-├── core/               # 配置、路径、日志、存储、密钥与计算环境
+├── core/               # 配置、路径、日志、存储、密钥和计算环境
 ├── db/                 # SQLAlchemy Async 与 SQLite
 ├── modules/
 │   ├── collection/     # 单博主、多博主、增量采集与诊断
@@ -149,9 +149,9 @@ app/
 - **ASR:** FunASR, SenseVoiceSmall, Paraformer, faster-whisper
 - **OCR:** RapidOCR, ONNX Runtime
 - **Local LLM:** Ollama, Qwen3.5, Qwen3 Embedding
-- **Retrieval:** Dense retrieval, BM25, weighted hybrid, RRF, MMR, Reranker
+- **Retrieval:** Dense retrieval, BM25, weighted hybrid, RRF, MMR, Qwen3 Reranker
 - **Document export:** python-docx
-- **Testing:** pytest, pytest-asyncio
+- **Testing:** pytest, pytest-asyncio, Ruff
 
 ## 快速开始
 
@@ -173,7 +173,7 @@ app/
 5. 浏览器自动打开本地管理页面；
 6. 首次采集前，在页面中完成抖音登录。
 
-> ASR、Ollama 和模型权重按需下载，不包含在 GitHub 仓库中。
+> ASR、Ollama、Reranker 和模型权重按需下载，不包含在 GitHub 仓库中。
 
 ### 开发者模式
 
@@ -191,11 +191,7 @@ playwright install chromium
 uvicorn app.main:app --reload
 ```
 
-默认访问：
-
-```text
-http://127.0.0.1:8000
-```
+默认访问：`http://127.0.0.1:8000`
 
 本地 ASR 依赖体积较大，按需安装：
 
@@ -203,34 +199,28 @@ http://127.0.0.1:8000
 pip install -r requirements-asr.txt
 ```
 
-PyTorch 和 torchaudio 建议继续由 `bootstrap.py` 根据硬件安装，避免 CUDA 版本被普通 pip 依赖覆盖。
+PyTorch 和 torchaudio 建议由 `bootstrap.py` 根据硬件安装，避免 CUDA 版本被普通 pip 依赖覆盖。
 
 ## 测试
 
 ```bash
 pip install -r requirements-ci.txt
 pytest -q
+ruff check app tests bootstrap.py careeragent_location.py configure_storage.py migrate_to_lightweight.py
 python -m compileall -q app tests bootstrap.py
 node --check app/web/static/app.js
 ```
 
-当前发布包在整理时完成：
-
-```text
-84 passed
-```
-
-测试均为离线或模拟测试，不会访问真实抖音账号、远程模型或本地 GPU。
+当前 GitHub 发布包在全新最小 CI 环境中完成 `94 passed`。测试均为离线或模拟测试，不会访问真实抖音账号、远程模型或本地 GPU。
 
 ## 数据与隐私
 
 CareerAgent 是本地优先应用。以下内容不会进入 Git 仓库：
 
-- `.env`；
-- API Key；
+- `.env` 和 API Key；
 - 抖音 Cookie 和浏览器登录目录；
 - SQLite 数据库；
-- ASR/Ollama 模型；
+- ASR、Embedding、Reranker 和 Ollama 模型；
 - 视频、音频和 OCR 图片缓存；
 - 日志、诊断包和用户导出文件。
 
@@ -258,15 +248,6 @@ CareerAgent 是本地优先应用。以下内容不会进入 Git 仓库：
 - 模型生成内容和自动质量指标不能替代人工复核；
 - 上游模型权重不随仓库发布，使用前需核对各自许可证。
 
-## Roadmap
-
-- 多平台 Provider：Bilibili、YouTube 和本地文档；
-- 后台任务队列与可暂停/恢复的流水线；
-- PostgreSQL 与对象存储支持；
-- 知识卡、学习状态和间隔复习；
-- 项目孵化 Backlog 与面试陪练；
-- 更完整的离线回归数据集和性能基准。
-
 ## License
 
-项目主体采用 [Apache License 2.0](LICENSE)。部分签名辅助代码及第三方依赖遵循各自许可证，详见 [NOTICE](NOTICE) 与 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+Apache License 2.0。第三方组件和模型仍受各自上游许可证约束，详见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。

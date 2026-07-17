@@ -1,179 +1,115 @@
-# CareerAgent Architecture
+# CareerAgent architecture
 
-## 1. Design goals
+## 1. Architectural style
 
-CareerAgent uses a **modular monolith** rather than premature microservices. A single FastAPI process keeps local deployment simple, while domain modules maintain boundaries that can later be extracted into workers or services.
+CareerAgent uses a **modular monolith**. A single FastAPI process is easier to install and debug for a local-first personal application, while clear module boundaries keep later service extraction possible.
 
-Primary goals:
+```text
+UI / CLI
+   ↓
+FastAPI routers
+   ↓
+Domain services
+   ↓
+Providers / engines / repositories
+   ↓
+SQLite, local files, browser sessions, model runtimes and remote APIs
+```
 
-1. preserve raw source and every derived text version;
-2. make each stage observable and restartable;
-3. avoid repeated ASR, LLM, Embedding, and indexing costs;
-4. support API and local-model implementations behind stable interfaces;
-5. keep user credentials and content local by default;
-6. allow collection, transcription, refinement, retrieval, and evaluation to evolve independently.
+Rules:
 
-## 2. Domain modules
+- platform-specific behavior stays inside Provider modules;
+- routers validate and translate HTTP requests but do not own business logic;
+- services orchestrate workflows and stable error codes;
+- repositories own database access;
+- heavyweight models are loaded lazily;
+- raw data and derived text versions are stored separately;
+- every long-running workflow exposes a task ID or Trace ID.
+
+## 2. Modules
 
 ### `collection`
 
-Responsibilities:
-
-- parse creator and content URLs;
-- collect creator metadata and public content lists;
-- distinguish video, gallery, and article items;
-- run single-creator and multi-creator jobs;
-- deduplicate by platform ID;
-- record run events, errors, retries, and trace IDs;
-- expose pending content for downstream processing.
-
-Provider strategy:
-
-```text
-DouyinHybridProvider
-├── Fast API provider
-│   ├── saved browser session snapshot
-│   ├── signed pagination requests
-│   └── exponential backoff
-└── Browser provider
-    ├── one creator profile page
-    ├── network response interception
-    └── DOM fallback
-```
+Responsible for creator/profile parsing, public work discovery, pagination, browser fallback, content-type classification, idempotent persistence, incremental collection, diagnostics, and run events.
 
 ### `transcription`
 
-Responsibilities:
-
-- resolve a content URL to a stable item;
-- download media using bounded limits and timeouts;
-- route by content type;
-- run SenseVoice, Paraformer, or faster-whisper;
-- run RapidOCR for gallery posts;
-- extract long-article content through structured and rendered fallbacks;
-- persist raw text, model metadata, runtime device, duration, and errors;
-- schedule background batches and retry failed children.
+Responsible for content resolution, media download, FFmpeg extraction, SenseVoice/Paraformer/Whisper execution, OCR, article extraction, batch processing, quality evaluation, CER, and document export.
 
 ### `refinement`
 
-Responsibilities:
-
-- deterministic text normalization;
-- domain glossary corrections;
-- API or local Qwen readable-text refinement;
-- numeric, URL, version, length, and edit-ratio validation;
-- keep raw, normalized, refined, and human-final versions separately;
-- prepare document-level metadata for the knowledge base.
+Responsible for deterministic cleanup, terminology normalization, OpenAI-compatible rewriting, Ollama local refinement, safety validation, manual final drafts, and knowledge-preparation documents.
 
 ### `knowledge_base`
 
-Responsibilities:
-
-- prepare approved documents;
-- chunk text and build independent index profiles;
-- generate embeddings through API or Ollama;
-- retrieve using Dense, BM25, weighted hybrid, or RRF;
-- apply MMR and optional reranking;
-- answer strictly from retrieved evidence with numbered citations;
-- manage retrieval and end-to-end RAG evaluation sets;
-- diagnose failures and compare parameter experiments;
-- publish the selected runtime configuration.
+Responsible for parent-child chunking, embedding, index metadata, Dense/BM25/hybrid/RRF retrieval, MMR, local/API reranking, cited answers, caches, evaluation datasets, regression baselines, failure analysis, and retrieval/RAG optimization.
 
 ### `local_models`
 
-Responsibilities:
+Responsible for Ollama portable installation, model directory configuration, service startup, model pulls, and chat/embedding smoke tests.
 
-- store Ollama settings;
-- install the official Windows portable package;
-- verify archives and manage download resumes;
-- configure local model directories;
-- pull and test chat and embedding models sequentially;
-- avoid modifying ASR/PyTorch environments.
+## 3. Data flow
 
-## 3. Application layers
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant C as Collection
+    participant T as Transcription
+    participant R as Refinement
+    participant K as Knowledge Base
+    participant E as Evaluation
 
-```text
-Web UI
-  ↓ HTTP/JSON
-FastAPI routers
-  ↓
-Domain services
-  ↓
-Providers / engines / validators
-  ↓
-Repositories
-  ↓
-SQLite + local filesystem + optional remote APIs
+    U->>C: Creator or content URL
+    C-->>U: Creator + content metadata
+    U->>T: Start text conversion
+    T-->>U: Raw text + quality result
+    U->>R: Clean / correct / refine
+    R-->>U: Final reviewed document
+    U->>K: Prepare and index
+    K-->>U: Retrieval results / cited answer
+    U->>E: Run evaluation or experiment
+    E-->>U: Metrics, regressions, diagnosis
 ```
 
-The web UI does not contain collection, ASR, or RAG business rules. CLI and HTTP entry points share the same service layer.
-
-## 4. Data lifecycle
+## 4. Retrieval pipeline
 
 ```text
-Creator
-  └── ContentItem
-        └── TranscriptionJob
-              ├── Raw text
-              ├── Quality assessment
-              ├── Cross-model review
-              └── RefinementJob
-                    ├── Normalized text
-                    ├── Refined text
-                    ├── Human final text
-                    └── Knowledge preparation
-                          └── Chunk / Embedding profile
-                                ├── Retrieval evaluation
-                                └── RAG answer evaluation
+Query classification
+→ query embedding / BM25 preparation
+→ Dense, BM25, weighted hybrid or RRF
+→ optional MMR
+→ conditional local/API reranking
+→ parent-chunk recovery
+→ overlap deduplication and source limits
+→ score-cliff stop and character budget
+→ low-confidence evidence gate
+→ cited answer generation
 ```
 
-Each content item has a semantic version/fingerprint. Interaction metrics can update without causing expensive downstream text processing. A semantic change marks the item pending again.
+Caches are keyed by index version and configuration. Rebuilding or changing an index invalidates dependent query, corpus, ranking, context, and answer caches.
 
-## 5. Observability
+## 5. Persistence
 
-Every long-running task records:
+SQLite stores business records and index metadata. Large media files, model weights, browser profiles, logs, and exports live under configurable local directories and are not committed to Git.
 
-- stable task ID;
-- trace ID;
-- current stage and progress;
-- provider/model/device;
-- elapsed time;
-- structured error code;
-- retry and fallback events;
-- redacted technical details.
+Important identities:
 
-Application logs are JSONL and rotate by size. Diagnostic bundles intentionally exclude cookies, browser profiles, remembered API keys, model files, and user media.
+- creator: `platform + platform_user_id`;
+- content: `platform + platform_content_id`;
+- collection run: run ID + trace ID;
+- transcription/refinement/index/evaluation runs: stable database IDs and configuration snapshots.
 
-## 6. Storage
+## 6. Error handling and observability
 
-Default Windows data lives outside the code directory under the user's local application-data path. The user may separately configure:
+User-facing failures use stable error codes with stage, retryability, suggestion, and technical detail. Structured logs are rotated and sensitive fields are redacted. Diagnostic exports intentionally exclude cookies, API keys, browser profiles, model files, and private databases.
 
-- Python runtime and CUDA environment;
-- model cache;
-- database and browser session;
-- temporary media cache;
-- Word/TXT exports;
-- Ollama application and model roots.
+## 7. Future extraction points
 
-This separation allows code upgrades without losing user data or requiring a new Douyin login.
+If scale requires service separation, the safest boundaries are:
 
-## 7. Security boundaries
+1. collector workers;
+2. media/ASR workers;
+3. model inference workers;
+4. retrieval and evaluation workers.
 
-- API keys are never returned by settings endpoints;
-- remembered keys use Windows DPAPI;
-- sensitive query parameters and cookies are redacted from logs;
-- browser verification is manual;
-- downloads enforce size and timeout limits;
-- external model/provider terms remain the user's responsibility.
-
-## 8. Planned evolution
-
-The modular boundaries support later extraction into:
-
-- collector workers;
-- transcription GPU workers;
-- LLM/Embedding workers;
-- PostgreSQL persistence;
-- object storage;
-- a durable queue such as Dramatiq, Celery, or ARQ;
-- multi-user workspaces and permissions.
+The current modular monolith avoids premature distributed-system complexity while preserving these boundaries.

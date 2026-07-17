@@ -9,10 +9,9 @@ The signing helpers in:
 - app/modules/collection/providers/douyin/xbogus.py
 
 contain or adapt Apache-2.0 licensed implementations associated with the F2
-and Douyin_TikTok_Download_API ecosystems. Original source attribution and
-license notices are retained in the relevant source files and documented in
-THIRD_PARTY_NOTICES.md.
+and Douyin_TikTok_Download_API ecosystems. Source attribution and license
+notices are retained in the relevant files and THIRD_PARTY_NOTICES.md.
 
 Model weights, Ollama, ASR engines, OCR engines, browser binaries, FFmpeg,
-PyTorch, and remote APIs are not relicensed by the CareerAgent license. They
-remain subject to their respective upstream licenses and terms.
+PyTorch, remote APIs, and other third-party components are not relicensed by
+the CareerAgent license and remain subject to their upstream terms.
