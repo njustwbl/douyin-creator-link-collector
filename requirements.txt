@@ -21,3 +21,8 @@ sentence-transformers>=5.4,<6.0
 transformers>=4.51,<6.0
 
 numpy>=1.26,<3.0
+
+# 标准数据库模式：PostgreSQL 异步驱动、pgvector 与正式迁移工具。
+asyncpg>=0.30,<1.0
+pgvector>=0.4,<1.0
+alembic>=1.16,<2.0

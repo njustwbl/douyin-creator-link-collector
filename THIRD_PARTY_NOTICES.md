@@ -1,32 +1,48 @@
-# Third-party notices
+# Third-Party Notices
 
-CareerAgent is distributed under Apache License 2.0. Third-party source code, libraries, browser binaries, model runtimes, model weights, and remote services remain subject to their own upstream licenses and terms.
+CareerAgent depends on third-party libraries, services, models, and platform data. This document summarizes major categories but does not replace upstream license texts.
 
 ## Douyin signing helpers
 
-The isolated helpers under:
+The isolated signing helpers under:
 
 - `app/modules/collection/providers/douyin/abogus.py`
 - `app/modules/collection/providers/douyin/xbogus.py`
 
-contain or adapt Apache-2.0 licensed implementations associated with the F2 / Douyin_TikTok_Download_API ecosystems and the user-provided `douyin-downloader` reference project. Original attribution is retained in the relevant source files.
+are adapted from Apache License 2.0 implementations associated with the F2 and Douyin/TikTok download API ecosystem. Original attribution and license headers are retained where available. The rest of CareerAgent is independently organized around its own Provider, Service, Repository, API, database, and Web UI layers.
 
-## Runtime libraries
+## Backend and data
 
-Major optional or direct dependencies include FastAPI, SQLAlchemy, HTTPX, Playwright, Beautiful Soup, python-docx, RapidFuzz, sentence-transformers, Transformers, FunASR, faster-whisper, CTranslate2, RapidOCR, ONNX Runtime, PyTorch, torchaudio, imageio-ffmpeg, FFmpeg, and Ollama. Refer to each upstream project for its current license.
+Major dependencies include FastAPI, Starlette, Uvicorn, Pydantic, SQLAlchemy, Alembic, asyncpg, aiosqlite, pgvector-python, PostgreSQL, and the pgvector PostgreSQL extension. Each remains subject to its upstream license.
 
-## Models
+The Docker setup uses the public `pgvector/pgvector` image. The image and bundled PostgreSQL components remain subject to their respective upstream licenses.
 
-CareerAgent does not redistribute model weights. Models are downloaded locally by the user and remain governed by their model cards and upstream terms, including but not limited to:
+## Browser and collection
 
-- SenseVoiceSmall and Paraformer-family models;
-- Whisper-family models;
-- `qwen3.5:4b`;
-- `qwen3-embedding:0.6b` and `qwen3-embedding:4b`;
-- `Qwen/Qwen3-Reranker-0.6B` and `Qwen/Qwen3-Reranker-4B`.
+Playwright and its downloaded Chromium runtime remain subject to their upstream licenses and terms. CareerAgent does not bypass login challenges or CAPTCHAs. Users are responsible for complying with platform terms, copyright, privacy, and applicable law.
 
-Review model licenses before redistribution or commercial use.
+## Local transcription and OCR
 
-## OpenAI-compatible APIs
+Optional local processing uses components such as:
 
-CareerAgent can call user-configured OpenAI-compatible endpoints. It does not bundle, resell, or grant access to any remote model. Users are responsible for provider accounts, API keys, pricing, data policies, model licenses, and terms of service. Remembered keys are excluded from Git and diagnostic packages and are protected with Windows DPAPI where supported.
+- FunASR and SenseVoice;
+- Paraformer models;
+- PyTorch and torchaudio;
+- faster-whisper and CTranslate2;
+- FFmpeg binaries supplied through the selected runtime;
+- RapidOCR and ONNX Runtime;
+- Beautiful Soup.
+
+Model weights are not bundled in this repository. They are downloaded locally on demand and may have model-specific licenses that differ from the software library license.
+
+## Local LLM, Embedding, and Reranker
+
+CareerAgent can interact with Ollama and locally downloaded Qwen chat, embedding, and reranker models. Ollama, model runtimes, model weights, and tokenizer files remain subject to their upstream licenses and model cards. Review the current upstream terms before redistribution or commercial use.
+
+## Hosted APIs
+
+CareerAgent can call user-configured OpenAI-compatible chat, embedding, and reranking endpoints. CareerAgent does not bundle, resell, or grant access to these services. Users are responsible for provider accounts, API keys, pricing, data handling, model licenses, and terms.
+
+## User and platform content
+
+The CareerAgent Apache License does not grant rights to third-party videos, images, articles, transcripts, model outputs, or user data processed by the application. Users must have the necessary rights and permissions for their use case.

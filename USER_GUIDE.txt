@@ -1,27 +1,35 @@
-CareerAgent v1.9.3 使用说明
-==========================
+CareerAgent v1.21.0 快速使用说明
+=================================
 
-首次使用
+Windows 推荐启动方式
+-------------------
+1. 安装 Python 3.11 或 3.12。
+2. 使用默认 PostgreSQL 模式时，安装并启动 Docker Desktop。
+3. 双击 CareerAgent_Start.bat。
+4. 首次启动选择运行数据目录和导出目录。
+5. 等待程序检查运行环境、数据库、依赖和 Chromium。
+6. 本地管理页面会自动在浏览器中打开。
+7. 首次采集前，在页面中完成抖音登录。
+
+SQLite 轻量模式
+---------------
+将 .env.example 复制为 .env，并设置：
+
+CAREERAGENT_DATABASE_MODE=sqlite
+
+GitHub 上传注意
+--------------
+不要上传以下本地数据：
+- .env 和 API Key；
+- 浏览器登录状态与 Cookie；
+- SQLite/PostgreSQL 数据目录和备份；
+- 模型、视频、音频、OCR 图片；
+- 日志、诊断包和用户导出文件。
+
+详细文档
 --------
-1. 完整解压项目。
-2. 双击 CareerAgent_Start.bat。
-3. 首次启动选择运行数据目录和导出目录。
-4. 等待程序自动创建虚拟环境、安装基础依赖和 Chromium。
-5. 浏览器打开后，先在页面中完成抖音登录。
-6. ASR、Ollama、Embedding 和 Reranker 模型按需下载，不包含在代码包中。
-
-开发者启动
-----------
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-playwright install chromium
-uvicorn app.main:app --reload
-
-本地数据
---------
-数据库、浏览器登录状态、API Key、模型、缓存、日志和导出文件均保存在本地配置目录，不应上传 GitHub。
-
-停止程序
---------
-关闭黑色运行窗口即可停止本地服务。
+README.md                              项目首页
+ARCHITECTURE.md                        系统架构
+docs/design/DATABASE_POSTGRESQL.md     PostgreSQL 与 pgvector
+docs/GITHUB_UPLOAD_GUIDE.md            GitHub 上传步骤
+docs/PORTFOLIO_GUIDE.md                简历和面试表达

@@ -1,72 +1,54 @@
 # CareerAgent
 
-> A local-first content processing and RAG evaluation platform for AI learning and career preparation.
+CareerAgent is a local-first AI content processing, RAG evaluation, and industry intelligence platform. It converts public Douyin videos, image posts, and long-form articles into traceable knowledge assets.
 
-**Current version: v1.9.3**
+**Current version: v1.21.0**
 
-CareerAgent turns public Douyin videos, image posts, and long-form articles into traceable knowledge assets:
+## Pipeline
 
 ```text
 Collection
-→ ASR / OCR / article extraction
-→ quality gate
-→ text refinement and human final draft
-→ knowledge preparation
-→ parent-child chunking and embeddings
-→ hybrid retrieval and optional reranking
-→ cited RAG answers
-→ evaluation, regression comparison, and optimization
+→ Video ASR / Image OCR / Article Extraction
+→ Quality Gate and Safe Refinement
+→ Human-approved Final Text
+→ PostgreSQL / pgvector
+→ Dense / BM25 / Hybrid / RRF / Reranking
+→ Cited RAG and Evaluation
+→ Entity / Claim / Event Materialization
+→ Statistics / Clustering / Alerts / Reports
+→ Creator Profiles and Data Governance
 ```
 
 ## Highlights
 
-- API-first Douyin collection with browser fallback and idempotent persistence;
-- SenseVoice, Paraformer, and faster-whisper transcription pipelines;
-- RapidOCR image-post extraction and long-article parsing;
-- quality scoring, dual-ASR review, and CER against human references;
-- deterministic cleanup, domain terminology correction, API rewriting, and local Ollama refinement;
-- parent-child chunks, enriched embedding text, Dense/BM25/weighted hybrid/RRF/MMR retrieval;
-- separate indexes for `qwen3-embedding:0.6b` and `qwen3-embedding:4b`;
-- local Qwen3-Reranker-0.6B/4B with batch safety limits;
-- evidence compression, low-confidence gating, numbered citations, and local streaming answers;
-- retrieval experiments, end-to-end RAG evaluation, historical regression baselines, and failure diagnosis;
-- local SQLite persistence, rotating logs, trace IDs, and diagnostic exports.
+- API-first Douyin creator and content collection with browser fallback;
+- SenseVoice, Paraformer, faster-whisper, RapidOCR, and article extraction;
+- ASR quality scoring, cross-model review, CER, terminology correction, and human approval;
+- parent-child chunking, incremental indexing, pgvector, BM25, RRF, MMR, and optional Qwen reranking;
+- cited knowledge-base answers, evidence gating, trace logging, and RAG regression evaluation;
+- structured intelligence entities, claims, events, learning items, and resources;
+- trend statistics, claim clustering, canonical events, explainable alerts, reports, and creator profiles;
+- PostgreSQL 17 + pgvector with SQLite compatibility mode and Alembic migrations;
+- local-first storage, redacted diagnostics, configurable model/cache/export paths.
 
-## Architecture
+## Quick Start
 
-```mermaid
-flowchart LR
-    A[Public Content] --> B[Collection]
-    B --> C[ASR / OCR / Article Extraction]
-    C --> D[Quality Gate]
-    D --> E[Refinement]
-    E --> F[Knowledge Preparation]
-    F --> G[Parent-Child Chunking]
-    G --> H[Embedding & Index]
-    H --> I[Hybrid Retrieval]
-    I --> J[Optional Reranker]
-    J --> K[Evidence Compression]
-    K --> L[Cited RAG Answer]
-    L --> M[Evaluation & Regression]
+On Windows, install Python 3.11/3.12 and Docker Desktop, then run:
+
+```text
+CareerAgent_Start.bat
 ```
 
-## Quick start
+For a lightweight SQLite setup, copy `.env.example` to `.env` and set:
 
-### Windows
+```env
+CAREERAGENT_DATABASE_MODE=sqlite
+```
 
-1. Install Python 3.11 or 3.12.
-2. Download and extract the repository.
-3. Double-click `CareerAgent_Start.bat`.
-4. Select local data and export directories on first launch.
-5. Complete Douyin login in the Playwright Chromium window before collection.
-
-Models, browser binaries, ASR runtimes, and Ollama assets are downloaded on demand and are not committed to the repository.
-
-### Developer setup
+Developer setup:
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 playwright install chromium
 uvicorn app.main:app --reload
@@ -78,20 +60,17 @@ Optional ASR dependencies:
 pip install -r requirements-asr.txt
 ```
 
-## Checks
+## Repository Safety
 
-```bash
-pip install -r requirements-ci.txt
-pytest -q
-ruff check app tests bootstrap.py careeragent_location.py configure_storage.py migrate_to_lightweight.py
-python -m compileall -q app tests bootstrap.py
-node --check app/web/static/app.js
-```
+Runtime databases, browser profiles, cookies, API keys, models, media, logs, diagnostics, and exports are excluded through `.gitignore`.
 
-## Privacy
+## Documentation
 
-The repository excludes API keys, browser sessions, cookies, SQLite databases, logs, diagnostics, model weights, media caches, and user exports. Review `docs/RELEASE_CHECKLIST.md` before publishing a fork.
+- [Architecture](ARCHITECTURE.md)
+- [GitHub upload guide](docs/GITHUB_UPLOAD_GUIDE.md)
+- [Portfolio guide](docs/PORTFOLIO_GUIDE.md)
+- [Release checklist](docs/RELEASE_CHECKLIST.md)
 
 ## License
 
-Apache License 2.0. Third-party software and model weights remain subject to their respective upstream licenses. See `THIRD_PARTY_NOTICES.md`.
+Apache License 2.0. Third-party components and model weights remain subject to their upstream licenses. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

@@ -1,115 +1,129 @@
-# CareerAgent architecture
+# CareerAgent Architecture
 
-## 1. Architectural style
+## 1. Design goals
 
-CareerAgent uses a **modular monolith**. A single FastAPI process is easier to install and debug for a local-first personal application, while clear module boundaries keep later service extraction possible.
+CareerAgent is organized as a modular monolith. This keeps local deployment simple while preserving clear domain boundaries for future service extraction.
+
+Key goals:
+
+1. local-first data ownership;
+2. reproducible and observable AI pipelines;
+3. incremental processing instead of full recomputation;
+4. evidence traceability from reports back to source content;
+5. swappable collection, model, database, and retrieval providers;
+6. explicit human review for risky transformations.
+
+## 2. Domain modules
 
 ```text
-UI / CLI
-   ↓
-FastAPI routers
-   ↓
-Domain services
-   ↓
-Providers / engines / repositories
-   ↓
-SQLite, local files, browser sessions, model runtimes and remote APIs
+app/modules/
+├── collection/       Public content discovery, creator metadata, incremental runs
+├── transcription/    Video ASR, image OCR, article extraction, batch execution
+├── refinement/       Cleaning, terminology correction, LLM refinement, structure extraction
+├── knowledge_base/   Chunking, embedding, indexing, retrieval, RAG, evaluation
+├── intelligence/     Materialization, statistics, clustering, alerts, reports, profiles
+└── local_models/     Ollama installation, configuration, pull, health checks
 ```
 
-Rules:
+Each module follows a variant of:
 
-- platform-specific behavior stays inside Provider modules;
-- routers validate and translate HTTP requests but do not own business logic;
-- services orchestrate workflows and stable error codes;
-- repositories own database access;
-- heavyweight models are loaded lazily;
-- raw data and derived text versions are stored separately;
-- every long-running workflow exposes a task ID or Trace ID.
+```text
+Router → Service → Repository / Provider → Database or External Runtime
+```
 
-## 2. Modules
+Pydantic schemas define API boundaries. SQLAlchemy models define persisted state. Providers isolate unstable external systems.
 
-### `collection`
-
-Responsible for creator/profile parsing, public work discovery, pagination, browser fallback, content-type classification, idempotent persistence, incremental collection, diagnostics, and run events.
-
-### `transcription`
-
-Responsible for content resolution, media download, FFmpeg extraction, SenseVoice/Paraformer/Whisper execution, OCR, article extraction, batch processing, quality evaluation, CER, and document export.
-
-### `refinement`
-
-Responsible for deterministic cleanup, terminology normalization, OpenAI-compatible rewriting, Ollama local refinement, safety validation, manual final drafts, and knowledge-preparation documents.
-
-### `knowledge_base`
-
-Responsible for parent-child chunking, embedding, index metadata, Dense/BM25/hybrid/RRF retrieval, MMR, local/API reranking, cited answers, caches, evaluation datasets, regression baselines, failure analysis, and retrieval/RAG optimization.
-
-### `local_models`
-
-Responsible for Ollama portable installation, model directory configuration, service startup, model pulls, and chat/embedding smoke tests.
-
-## 3. Data flow
+## 3. Core data flow
 
 ```mermaid
-sequenceDiagram
-    participant U as User
-    participant C as Collection
-    participant T as Transcription
-    participant R as Refinement
-    participant K as Knowledge Base
-    participant E as Evaluation
-
-    U->>C: Creator or content URL
-    C-->>U: Creator + content metadata
-    U->>T: Start text conversion
-    T-->>U: Raw text + quality result
-    U->>R: Clean / correct / refine
-    R-->>U: Final reviewed document
-    U->>K: Prepare and index
-    K-->>U: Retrieval results / cited answer
-    U->>E: Run evaluation or experiment
-    E-->>U: Metrics, regressions, diagnosis
+flowchart TD
+    A[Creator / Content Item] --> B[Transcription Job]
+    B --> C[Raw Text]
+    C --> D[Quality Assessment]
+    D --> E[Refinement Run]
+    E --> F[Human Final Text]
+    F --> G[Knowledge Preparation]
+    G --> H[Chunk / Parent Chunk]
+    H --> I[Embedding Profile / Vector]
+    I --> J[Retrieval Trace]
+    J --> K[RAG Answer / Evaluation]
+    F --> L[Intelligence Document]
+    L --> M[Entity / Claim / Event / Learning Item / Resource]
+    M --> N[Statistics / Clusters / Canonical Events]
+    N --> O[Alerts / Reports / Creator Profiles]
+    O --> P[Quality and Performance Governance]
 ```
 
-## 4. Retrieval pipeline
+## 4. Persistence
+
+### PostgreSQL mode
+
+The standard mode uses PostgreSQL 17 and pgvector:
+
+- Alembic controls schema evolution;
+- vectors are stored in pgvector columns;
+- HNSW indexes are created per compatible embedding dimension;
+- application tables preserve source, trace, quality, evaluation, and intelligence relations;
+- Docker Compose binds PostgreSQL only to localhost.
+
+### SQLite mode
+
+SQLite remains available for lightweight demonstrations and local development. Vector retrieval may fall back to in-process exact search depending on the selected profile and backend capabilities.
+
+## 5. Retrieval architecture
 
 ```text
-Query classification
-→ query embedding / BM25 preparation
-→ Dense, BM25, weighted hybrid or RRF
-→ optional MMR
-→ conditional local/API reranking
-→ parent-chunk recovery
-→ overlap deduplication and source limits
-→ score-cliff stop and character budget
-→ low-confidence evidence gate
-→ cited answer generation
+Query
+→ Query classification
+→ Dense and/or BM25 candidates
+→ Weighted hybrid or RRF fusion
+→ MMR source diversification
+→ Optional local/API reranker
+→ Parent context recovery
+→ Evidence compression and token budget
+→ Low-confidence gate
+→ Cited answer
 ```
 
-Caches are keyed by index version and configuration. Rebuilding or changing an index invalidates dependent query, corpus, ranking, context, and answer caches.
+Index identities include provider, model, dimensions, chunking configuration, and source signatures. Changes invalidate related caches.
 
-## 5. Persistence
+## 6. Intelligence architecture
 
-SQLite stores business records and index metadata. Large media files, model weights, browser profiles, logs, and exports live under configurable local directories and are not committed to Git.
+The intelligence layer does not discard source text. It materializes normalized relations while preserving evidence links:
 
-Important identities:
+```text
+Final Text
+→ IntelligenceDocument
+→ EntityMention / Claim / Event / LearningItem / Resource
+```
 
-- creator: `platform + platform_user_id`;
-- content: `platform + platform_content_id`;
-- collection run: run ID + trace ID;
-- transcription/refinement/index/evaluation runs: stable database IDs and configuration snapshots.
+Derived systems include:
 
-## 6. Error handling and observability
+- daily statistics and trend signals;
+- claim clustering and human pair labeling;
+- canonical event deduplication;
+- explainable watchlist alerts;
+- deterministic report skeletons with optional LLM editing;
+- creator profiles and claim evolution timelines;
+- persistent data-quality issues and performance diagnostics.
 
-User-facing failures use stable error codes with stage, retryability, suggestion, and technical detail. Structured logs are rotated and sensitive fields are redacted. Diagnostic exports intentionally exclude cookies, API keys, browser profiles, model files, and private databases.
+## 7. Observability and safety
 
-## 7. Future extraction points
+- every collection/transcription/refinement flow records task status and Trace ID;
+- rotating JSONL logs redact cookies, tokens, and signing parameters;
+- diagnostics export excludes browser profiles and secrets;
+- original text is never overwritten by model output;
+- high-risk edits require human review;
+- cleanup APIs are allowlisted and require explicit user action.
 
-If scale requires service separation, the safest boundaries are:
+## 8. Deployment evolution
 
-1. collector workers;
-2. media/ASR workers;
-3. model inference workers;
-4. retrieval and evaluation workers.
+The current modular monolith is appropriate for a single-user local application. Potential extraction boundaries are:
 
-The current modular monolith avoids premature distributed-system complexity while preserving these boundaries.
+- collection workers;
+- GPU transcription workers;
+- embedding/reranking workers;
+- scheduled intelligence jobs;
+- API/UI deployment and authentication.
+
+The detailed historical architecture notes are preserved in [docs/design/DETAILED_ARCHITECTURE.md](docs/design/DETAILED_ARCHITECTURE.md).

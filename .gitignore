@@ -8,12 +8,75 @@ __pycache__/
 .coverage
 htmlcov/
 
-# Virtual environments and local config
+# Virtual environments
 .venv/
 venv/
+env/
+
+# Local configuration and secrets
 .env
 .env.*
 !.env.example
+*.local
+
+# CareerAgent runtime data
+data/**
+!data/.gitkeep
+runtime/
+cache/
+media/
+models/
+logs/
+diagnostics/
+exports/
+backups/
+browser/
+browser_profile/
+postgres-data/
+pgdata/
+
+# Databases and session state
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.dump
+*.backup
+*session*.json
+*cookie*.json
+api_settings.json
+ollama_settings.json
+location.json
+
+# User-generated content and model artifacts
+*.mp3
+*.mp4
+*.m4a
+*.wav
+*.flac
+*.webm
+*.srt
+*.vtt
+*.onnx
+*.safetensors
+*.gguf
+*.pt
+*.pth
+*.ckpt
+*.bin
+*.docx
+*.xlsx
+*.xls
+*.csv
+*.jsonl
+
+# Generated diagnostics and archives
+*.log
+*.zip
+*.7z
+*.tar
+*.gz
+render_test.html
 
 # IDE / OS
 .vscode/
@@ -22,63 +85,7 @@ venv/
 Thumbs.db
 desktop.ini
 
-# Local CareerAgent runtime data
-data/*
-!data/.gitkeep
-career_agent.db
-*.db
-*.db-shm
-*.db-wal
-*.sqlite
-*.sqlite3
-
-# Browser sessions, API settings and secrets
-**/browser/
-**/browser_profile/
-**/douyin_session.json
-**/*api_settings*.json
-**/*ollama_settings*.json
-**/*secret*.json
-**/*credentials*.json
-
-# Logs and diagnostics
-*.log
-*.jsonl
-**/logs/
-**/diagnostics/
-**/*diagnostic*.zip
-
-# Models, runtimes and caches
-**/models/
-**/model_cache/
-**/downloads/
-**/runtime/
-**/torch/
-**/ollama/
-**/huggingface/
-
-# Media and generated exports
-**/cache/media/
-*.mp4
-*.mov
-*.mkv
-*.webm
-*.wav
-*.mp3
-*.m4a
-*.flac
-*.onnx
-*.safetensors
-*.bin
-*.pt
-*.pth
-*.gguf
-*.docx
-*.xlsx
-*.csv
-*.zip
-
-# Temporary/rendered files
-render_test.html
-*.tmp
-*.part
+# Node tooling, if introduced later
+node_modules/
+npm-debug.log*
+yarn-error.log*

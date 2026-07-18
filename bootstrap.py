@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any
 
 from careeragent_location import ensure_location_configuration, format_bytes, free_space_bytes
+from database_bootstrap import ensure_database_runtime
 
 ROOT = Path(__file__).resolve().parent
 
@@ -187,10 +188,10 @@ def ensure_requirements_files() -> None:
 def ensure_virtual_environment() -> Path:
     python = venv_python()
     if python.is_file():
-        print("[1/7] Runtime environment already exists.")
+        print("[1/8] Runtime environment already exists.")
         return python
 
-    print(f"[1/7] Creating runtime environment at {VENV_DIR}...")
+    print(f"[1/8] Creating runtime environment at {VENV_DIR}...")
     VENV_DIR.parent.mkdir(parents=True, exist_ok=True)
     venv.EnvBuilder(with_pip=True, clear=False).create(VENV_DIR)
     python = venv_python()
@@ -208,13 +209,64 @@ def ensure_dependencies(python: Path) -> None:
     )
 
     if expected_hash == installed_hash:
-        print("[2/7] Project dependencies are up to date.")
+        print("[2/8] Project dependencies are up to date.")
         return
 
-    print("[2/7] Installing or updating project dependencies...")
+    print("[2/8] Installing or updating project dependencies...")
     run([str(python), "-m", "pip", "install", "--upgrade", "pip"])
     run([str(python), "-m", "pip", "install", "-r", str(REQUIREMENTS)])
     REQUIREMENTS_MARKER.write_text(expected_hash, encoding="utf-8")
+
+
+def _legacy_sqlite_path() -> Path:
+    modern = APP_HOME / "database" / "career_agent.db"
+    legacy = APP_HOME / "career_agent.db"
+    return modern if modern.exists() or not legacy.exists() else legacy
+
+
+def ensure_database(python: Path) -> dict[str, Any]:
+    """启动 PostgreSQL、执行 Alembic，并在首次切换时迁移现有 SQLite。"""
+    print("[3/8] Preparing database...")
+    runtime = ensure_database_runtime(APP_HOME)
+    os.environ.update(runtime.environment)
+    if runtime.mode == "sqlite":
+        print("      Database mode: SQLite lightweight compatibility mode")
+        return {"mode": "sqlite", "migrated": False}
+
+    print("      Database mode: PostgreSQL + pgvector")
+    migration_env = dict(os.environ)
+    migration_env.update(runtime.environment)
+    run(
+        [str(python), "-m", "alembic", "-c", str(ROOT / "alembic.ini"), "upgrade", "head"],
+        env=migration_env,
+    )
+    migrated = False
+    source = _legacy_sqlite_path()
+    auto_migrate = env_bool("DATABASE_AUTO_MIGRATE_SQLITE", True)
+    if auto_migrate and source.is_file() and source.stat().st_size > 0:
+        print(f"      Checking existing SQLite data: {source}")
+        completed = run(
+            [
+                str(python),
+                str(ROOT / "migrate_sqlite_to_postgres.py"),
+                "--source",
+                str(source),
+            ],
+            check=False,
+            capture=True,
+            env=migration_env,
+        )
+        if completed.returncode:
+            detail = (completed.stderr or completed.stdout or "unknown migration error").strip()
+            raise RuntimeError(f"SQLite data migration failed:\n{detail}")
+        if completed.stdout.strip():
+            print(completed.stdout.strip())
+        migrated = '"status": "migrated"' in completed.stdout
+    return {
+        "mode": "postgres",
+        "managed_by_docker": runtime.managed_by_docker,
+        "migrated": migrated,
+    }
 
 
 def detect_nvidia_gpu() -> dict[str, Any]:
@@ -328,7 +380,7 @@ def install_torch(python: Path, target: str) -> dict[str, Any]:
 
 
 def ensure_torch_runtime(python: Path) -> dict[str, Any]:
-    print("[3/7] Detecting compute device and PyTorch runtime...")
+    print("[4/8] Detecting compute device and PyTorch runtime...")
     nvidia = detect_nvidia_gpu()
     desired = desired_accelerator(nvidia)
     current = inspect_torch(python)
@@ -386,10 +438,10 @@ def ensure_asr_dependencies(python: Path) -> None:
         else ""
     )
     if expected_hash == installed_hash:
-        print("[4/7] ASR and OCR dependencies are up to date.")
+        print("[5/8] ASR and OCR dependencies are up to date.")
         return
 
-    print("[4/7] Installing local ASR and OCR dependencies...")
+    print("[5/8] Installing local ASR and OCR dependencies...")
     print("      First installation is large and may take several minutes.")
     try:
         run([str(python), "-m", "pip", "install", "-r", str(ASR_REQUIREMENTS)])
@@ -403,16 +455,16 @@ def ensure_asr_dependencies(python: Path) -> None:
 
 def ensure_playwright_browser(python: Path) -> None:
     if PLAYWRIGHT_MARKER.is_file():
-        print("[5/7] Chromium is already installed.")
+        print("[6/8] Chromium is already installed.")
         return
 
-    print("[5/7] Installing Chromium for Playwright...")
+    print("[6/8] Installing Chromium for Playwright...")
     run([str(python), "-m", "playwright", "install", "chromium"])
     PLAYWRIGHT_MARKER.write_text("installed\n", encoding="utf-8")
 
 
 def write_compute_report(python: Path) -> None:
-    print("[6/7] Verifying compute environment...")
+    print("[7/8] Verifying compute environment...")
     completed = run(
         [str(python), "-m", "app.core.compute"],
         check=False,
@@ -441,7 +493,7 @@ def write_compute_report(python: Path) -> None:
 
 
 def launch(python: Path) -> None:
-    print("[7/7] Starting CareerAgent Collector...")
+    print("[8/8] Starting CareerAgent...")
     print("The management page will open automatically in your browser.")
     run([str(python), "-m", "app.launcher"])
 
@@ -453,6 +505,7 @@ def main() -> int:
         ensure_requirements_files()
         python = ensure_virtual_environment()
         ensure_dependencies(python)
+        ensure_database(python)
         ensure_torch_runtime(python)
         ensure_asr_dependencies(python)
         ensure_playwright_browser(python)

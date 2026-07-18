@@ -1,7 +1,7 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-title CareerAgent Collector
+title CareerAgent
 
 where py >nul 2>nul
 if errorlevel 1 (

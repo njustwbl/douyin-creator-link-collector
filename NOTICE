@@ -1,17 +1,6 @@
 CareerAgent
 Copyright 2026 CareerAgent contributors
 
-This product includes software developed by CareerAgent contributors.
+This product includes or adapts third-party open-source software. See THIRD_PARTY_NOTICES.md for attribution and license notes.
 
-The signing helpers in:
-
-- app/modules/collection/providers/douyin/abogus.py
-- app/modules/collection/providers/douyin/xbogus.py
-
-contain or adapt Apache-2.0 licensed implementations associated with the F2
-and Douyin_TikTok_Download_API ecosystems. Source attribution and license
-notices are retained in the relevant files and THIRD_PARTY_NOTICES.md.
-
-Model weights, Ollama, ASR engines, OCR engines, browser binaries, FFmpeg,
-PyTorch, remote APIs, and other third-party components are not relicensed by
-the CareerAgent license and remain subject to their upstream terms.
+Model weights, hosted APIs, platform content, and user data are not licensed under the CareerAgent Apache License merely because they are processed by this software.
