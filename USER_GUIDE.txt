@@ -1,35 +1,21 @@
-CareerAgent v1.21.0 快速使用说明
-=================================
+CareerAgent v1.23.0 使用说明
+===========================
 
-Windows 推荐启动方式
--------------------
+首次运行：
 1. 安装 Python 3.11 或 3.12。
-2. 使用默认 PostgreSQL 模式时，安装并启动 Docker Desktop。
+2. 安装并启动 Docker Desktop。
 3. 双击 CareerAgent_Start.bat。
-4. 首次启动选择运行数据目录和导出目录。
-5. 等待程序检查运行环境、数据库、依赖和 Chromium。
-6. 本地管理页面会自动在浏览器中打开。
-7. 首次采集前，在页面中完成抖音登录。
+4. 选择运行数据目录和导出目录。
+5. 等待 PostgreSQL、依赖和数据库迁移检查完成。
+6. 浏览器自动打开后，首次采集前完成抖音登录。
 
-SQLite 轻量模式
----------------
-将 .env.example 复制为 .env，并设置：
+多层情报问答：
+- 普通 RAG：查原文、参数和单篇内容。
+- 行业情报分析：查趋势、观点、事件、统计和博主比较。
+- 自动判断：系统先识别问题意图，再选择证据层。
 
-CAREERAGENT_DATABASE_MODE=sqlite
-
-GitHub 上传注意
---------------
-不要上传以下本地数据：
-- .env 和 API Key；
-- 浏览器登录状态与 Cookie；
-- SQLite/PostgreSQL 数据目录和备份；
-- 模型、视频、音频、OCR 图片；
-- 日志、诊断包和用户导出文件。
-
-详细文档
---------
-README.md                              项目首页
-ARCHITECTURE.md                        系统架构
-docs/design/DATABASE_POSTGRESQL.md     PostgreSQL 与 pgvector
-docs/GITHUB_UPLOAD_GUIDE.md            GitHub 上传步骤
-docs/PORTFOLIO_GUIDE.md                简历和面试表达
+注意：
+- 代码仓库不包含 Cookie、API Key、数据库、模型或用户导出数据。
+- 长任务可在后台任务中心查看进度、取消或重试。
+- 关闭黑色启动窗口会停止本地服务。
+- PostgreSQL 恢复操作会覆盖数据，必须先备份并人工确认。

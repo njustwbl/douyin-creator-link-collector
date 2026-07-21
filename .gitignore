@@ -1,82 +1,78 @@
 # Python
 __pycache__/
 *.py[cod]
-*$py.class
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
 .coverage
 htmlcov/
-
-# Virtual environments
 .venv/
 venv/
-env/
 
-# Local configuration and secrets
+# Secrets and local configuration
 .env
 .env.*
 !.env.example
-*.local
+*.pem
+*.key
 
 # CareerAgent runtime data
-data/**
+data/*
 !data/.gitkeep
-runtime/
-cache/
-media/
-models/
-logs/
-diagnostics/
-exports/
-backups/
-browser/
-browser_profile/
-postgres-data/
-pgdata/
+**/browser_profile/
+**/browser/
+**/cookies*.json
+**/*session*.json
+**/*api_settings*.json
+**/*secret*.json
 
-# Databases and session state
+# Databases and backups
 *.db
-*.db-*
 *.sqlite
 *.sqlite3
 *.dump
 *.backup
-*session*.json
-*cookie*.json
-api_settings.json
-ollama_settings.json
-location.json
+postgres-data/
+pgdata/
+backups/
 
-# User-generated content and model artifacts
+# Logs and diagnostics
+*.log
+*.jsonl
+logs/
+diagnostics/
+*diagnostic*.zip
+
+# Media, models and generated artifacts
+media/
+models/
+cache/
+exports/
+output/
+outputs/
 *.mp3
-*.mp4
-*.m4a
 *.wav
-*.flac
+*.m4a
+*.mp4
 *.webm
-*.srt
-*.vtt
-*.onnx
-*.safetensors
-*.gguf
-*.pt
-*.pth
-*.ckpt
-*.bin
+*.jpg
+*.jpeg
+*.png
+*.webp
 *.docx
 *.xlsx
 *.xls
 *.csv
-*.jsonl
-
-# Generated diagnostics and archives
-*.log
 *.zip
 *.7z
 *.tar
 *.gz
-render_test.html
+
+# Keep repository documentation assets
+!docs/assets/**/*.png
+!docs/assets/**/*.jpg
+!docs/assets/**/*.jpeg
+!docs/assets/**/*.webp
 
 # IDE / OS
 .vscode/
@@ -85,7 +81,6 @@ render_test.html
 Thumbs.db
 desktop.ini
 
-# Node tooling, if introduced later
-node_modules/
-npm-debug.log*
-yarn-error.log*
+# Local smoke-test outputs
+render_test.html
+coverage.xml
